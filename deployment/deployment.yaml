@@ -1,0 +1,185 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-hello
+  labels:
+    app: service-hello
+spec:
+  ports:
+    - port: 8080
+      name: http
+  selector:
+    app: service-hello
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-hello
+  labels:
+    app: service-hello
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-hello
+  template:
+    metadata:
+      labels:
+        app: service-hello
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: hello-app
+          image: robinfoe/service-hello-istio
+          #image: image-registry.openshift-image-registry.svc:5000/default/service-a-java-istio
+          env:
+            - name: JAEGER_ENDPOINT
+              value: http://jaeger-collector.istio-system.svc:14268/api/traces
+            - name: JAEGER_PROPAGATION
+              value: b3
+            - name: SERVICE_FORMATTER
+              value: service-greeter
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+
+
+### GREETER SERVICE ###
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-greeter
+  labels:
+    app: service-greeter
+    service: service-greeter
+spec:
+  ports:
+    - port: 8081
+      name: http
+  selector:
+    app: service-greeter
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-greeter-v1
+  labels:
+    app: service-greeter
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-greeter
+  template:
+    metadata:
+      labels:
+        app: service-greeter
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: greeter-app
+          image: robinfoe/service-greeter-istio-v1
+          #image: image-registry.openshift-image-registry.svc:5000/default/service-b-java-istio
+          env:
+            - name: JAEGER_ENDPOINT
+              value: http://jaeger-collector.istio-system.svc:14268/api/traces
+            - name: JAEGER_PROPAGATION
+              value: b3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-greeter-v2
+  labels:
+    app: service-greeter
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-greeter
+  template:
+    metadata:
+      labels:
+        app: service-greeter
+        version: v2
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: greeter-app
+          image: robinfoe/service-greeter-istio-v2
+          env:
+            - name: SERVICE_FORMATTER
+              value: service-rename
+            - name: JAEGER_ENDPOINT
+              value: http://jaeger-collector.istio-system.svc:14268/api/traces
+            - name: JAEGER_PROPAGATION
+              value: b3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+
+
+
+### RENAME SERVICE ###
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-rename
+  labels:
+    app: service-rename
+    service: service-rename
+spec:
+  ports:
+    - port: 8082
+      name: http
+  selector:
+    app: service-rename
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-rename
+  labels:
+    app: service-rename
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service-rename
+  template:
+    metadata:
+      labels:
+        app: service-rename
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: rename-app
+          image: robinfoe/service-rename-istio
+          env:
+            - name: JAEGER_ENDPOINT
+              value: http://jaeger-collector.istio-system.svc:14268/api/traces
+            - name: JAEGER_PROPAGATION
+              value: b3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082

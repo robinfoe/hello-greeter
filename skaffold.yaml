@@ -1,0 +1,32 @@
+apiVersion: skaffold/v2beta18
+kind: Config
+metadata:
+  name: hello-greeter
+build:
+  artifacts:
+  
+  - image: robinfoe/service-greeter-istio-v1
+    context: service-greeter-v1
+    docker:
+      dockerfile: Dockerfile
+  
+  - image: robinfoe/service-greeter-istio-v2
+    context: service-greeter-v2
+    docker:
+      dockerfile: Dockerfile
+
+  - image: robinfoe/service-rename-istio
+    context: service-rename-v2
+    docker:
+      dockerfile: Dockerfile
+  
+  
+  - image: robinfoe/service-hello-istio
+    context: service-hello
+    docker:
+      dockerfile: Dockerfile
+deploy:
+  kubectl:
+    manifests:
+    - deployment/deployment.yaml
+    - deployment/gateway.yaml

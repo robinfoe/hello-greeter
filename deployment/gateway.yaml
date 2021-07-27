@@ -1,0 +1,165 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: hello-greeter-gateway
+spec:
+  selector:
+    istio: ingressgateway ## ingressgateway # use istio default controller
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+
+## Hello related services 
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: hello-greeter
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - hello-greeter-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /sayHello
+      route:
+        - destination:
+            host: service-hello
+            port:
+              number: 8080
+
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: service-hello-rule
+spec:
+  host: service-hello
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+
+
+## GREETER RELATED SERVICES
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: service-greeter
+spec:
+  hosts:
+  - service-greeter
+  http:
+  - route:
+    - destination:
+        host: service-greeter
+        subset: v2
+
+---      
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: service-greeter-rule
+spec:
+  host: service-greeter
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+
+
+## RENAME RELATED SERVICES
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: service-rename
+spec:
+  hosts:
+  - service-rename
+  http:
+  - route:
+    - destination:
+        host: service-rename
+        subset: v1
+
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: service-rename-rule
+spec:
+  host: service-rename
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+
+
+
+
+
+  
+# ---
+# apiVersion: networking.istio.io/v1alpha3
+# kind: DestinationRule
+# metadata:
+#   name: reviews
+# spec:
+#   host: reviews
+#   subsets:
+#   - name: v1
+#     labels:
+#       version: v1
+#   - name: v2
+#     labels:
+#       version: v2
+#   - name: v3
+#     labels:
+#       version: v3
+# ---
+# apiVersion: networking.istio.io/v1alpha3
+# kind: DestinationRule
+# metadata:
+#   name: ratings
+# spec:
+#   host: ratings
+#   subsets:
+#   - name: v1
+#     labels:
+#       version: v1
+#   - name: v2
+#     labels:
+#       version: v2
+#   - name: v2-mysql
+#     labels:
+#       version: v2-mysql
+#   - name: v2-mysql-vm
+#     labels:
+#       version: v2-mysql-vm
+# ---
+# apiVersion: networking.istio.io/v1alpha3
+# kind: DestinationRule
+# metadata:
+#   name: details
+# spec:
+#   host: details
+#   subsets:
+#   - name: v1
+#     labels:
+#       version: v1
+#   - name: v2
+#     labels:
+#       version: v2
+# ---
